@@ -12,7 +12,7 @@ namespace Woz.TEMPer
 {
     // See https://github.com/urwen/temper/blob/master/temper.py for some reference
 
-    public sealed class TEMPerSensors
+    public sealed class TEMPerSensors : IDisposable
     {
         private const int PollMilliseconds = 3000;
         private const string BulkId = "mi_01"; // Believe same across all TEMPer type sensors
@@ -104,7 +104,9 @@ namespace Woz.TEMPer
             GC.SuppressFinalize(this);
         }
 
-        protected void Dispose(bool disposing)
+        ~TEMPerSensors() => Dispose(false);
+
+        private void Dispose(bool disposing)
         {
             if (_disposed)
             {
