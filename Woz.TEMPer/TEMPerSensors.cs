@@ -10,42 +10,39 @@ using Woz.TEMPer.Sensors;
 
 namespace Woz.TEMPer
 {
-    public class TEMPerSensors
+    // See https://github.com/urwen/temper/blob/master/temper.py for some reference
+
+    public sealed class TEMPerSensors
     {
         private const int PollMilliseconds = 3000;
         private const string BulkId = "mi_01"; // Believe same across all TEMPer type sensors
 
         private readonly FilterDeviceDefinition[] _deviceDefinitions = new[] {TEMPerV14.Definition};
         private bool _disposed = false;
+        private DeviceListener _deviceListener;
         private IDictionary<string, IDevice> _devices = new Dictionary<string, IDevice>();
-
-        private delegate Task<decimal> TemperatureReader(IDevice device);
 
         public event EventHandler? SensorInitialized;
         public event EventHandler? SensorDisconnected;
 
-        public static void Register(ILogger? logger, ITracer? tracer)
-        {
-            WindowsHidDeviceFactory.Register(logger, tracer);
-        }
+        public static void Register(ILogger? logger, ITracer? tracer) 
+            => WindowsHidDeviceFactory.Register(logger, tracer);
 
-        public TEMPerSensors(ILogger? logger)
+        public static TEMPerSensors Create(ILogger? logger) => new TEMPerSensors(logger);
+
+        private TEMPerSensors(ILogger? logger)
         {
-            DeviceListener = new DeviceListener(_deviceDefinitions, PollMilliseconds) {Logger = logger};
+            _deviceListener = new DeviceListener(_deviceDefinitions, PollMilliseconds) {Logger = logger};
+            _deviceListener.DeviceInitialized += DeviceInitializedHandler;
+            _deviceListener.DeviceDisconnected += DeviceDisconnectedHandler;
         }
 
         public IEnumerable<IDevice> Devices => _devices.Values;
-        public DeviceListener DeviceListener { get; }
-
-        public void Start()
-        {
-            DeviceListener.DeviceInitialized += DeviceInitializedHandler;
-            DeviceListener.DeviceDisconnected += DeviceDisconnectedHandler;
-            DeviceListener.Start();
-        }
 
         public async Task InitialiseAsync()
         {
+            _deviceListener.Start();
+
             var devices = await DeviceManager.Current.GetDevicesAsync(_deviceDefinitions);
             var bulkDevices = devices.Where(device => device.DeviceId.Contains(BulkId)).ToArray();
 
@@ -81,7 +78,7 @@ namespace Woz.TEMPer
         {
             switch (device.DetermineType())
             {
-                case SensorType.TRMPerV14:
+                case SensorType.TEMPerV14:
                     return SensorResult.Create(device, await TEMPerV14.ReadTemperature(device));
 
                 default:
@@ -107,7 +104,7 @@ namespace Woz.TEMPer
             GC.SuppressFinalize(this);
         }
 
-        protected virtual void Dispose(bool disposing)
+        protected void Dispose(bool disposing)
         {
             if (_disposed)
             {
@@ -116,9 +113,9 @@ namespace Woz.TEMPer
 
             if (disposing)
             {
-                DeviceListener.DeviceInitialized -= DeviceInitializedHandler;
-                DeviceListener.DeviceDisconnected -= DeviceDisconnectedHandler;
-                DeviceListener.Dispose();
+                _deviceListener.DeviceInitialized -= DeviceInitializedHandler;
+                _deviceListener.DeviceDisconnected -= DeviceDisconnectedHandler;
+                _deviceListener.Dispose();
 
                 _devices.Values.ForEach(device => device.Dispose());
             }

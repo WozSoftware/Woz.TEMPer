@@ -1,4 +1,4 @@
 ﻿namespace Woz.TEMPer
 {
-    public enum SensorType {TRMPerV14, Unknown}
+    public enum SensorType {TEMPerV14, Unknown}
 }

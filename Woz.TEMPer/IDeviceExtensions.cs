@@ -9,7 +9,7 @@ namespace Woz.TEMPer
             switch (device?.ConnectedDeviceDefinition?.ProductName)
             {
                 case "TEMPerV1.4":
-                    return SensorType.TRMPerV14;
+                    return SensorType.TEMPerV14;
             }
 
             return SensorType.Unknown;

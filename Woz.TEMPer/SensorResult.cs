@@ -3,7 +3,7 @@ using Woz.Functional.Monads;
 
 namespace Woz.TEMPer
 {
-    public class SensorResult
+    public sealed class SensorResult
     {
         private static string Unknown = "Unknown";
 

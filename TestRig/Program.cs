@@ -1,24 +1,19 @@
-﻿using Device.Net;
-using Hid.Net.Windows;
-using System;
-using System.Threading;
-using Usb.Net.Windows;
+﻿using System.Threading.Tasks;
 using Woz.TEMPer;
 
 namespace TestRig
 {
     class Program
     {
-        static async System.Threading.Tasks.Task Main(string[] args)
+        static async Task Main(string[] args)
         {
             // Quick and dirty test rig, not planned to be part of library
 
             TEMPerSensors.Register(null, null);
 
-            var sensor = new TEMPerSensors(null);
-            sensor.Start();
-            await sensor.InitialiseAsync();
-            var results = await sensor.ReadTemperatures();
+            var sensors = TEMPerSensors.Create(null);
+            await sensors.InitialiseAsync();
+            var results = await sensors.ReadTemperatures();
         }
     }
 }
