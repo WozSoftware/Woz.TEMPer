@@ -17,7 +17,7 @@ namespace Woz.TEMPer
         private const int PollMilliseconds = 3000;
         private const string BulkId = "mi_01"; // Believe same across all TEMPer type sensors
 
-        private readonly FilterDeviceDefinition[] _deviceDefinitions = new[] {TEMPerV14.Definition};
+        private readonly FilterDeviceDefinition[] _deviceDefinitions = {TEMPerV14.Definition, TEMPerGoldV31.Definition, TEMPerXV31.Definition};
         private bool _disposed = false;
         private DeviceListener _deviceListener;
         private IDictionary<string, IDevice> _devices = new Dictionary<string, IDevice>();
@@ -80,6 +80,18 @@ namespace Woz.TEMPer
             {
                 case SensorType.TEMPerV14:
                     return SensorResult.Create(device, await TEMPerV14.ReadTemperature(device));
+
+                case SensorType.TEMPerGoldV31:
+                    return SensorResult.Create(device, await TEMPerGoldV31.ReadTemperature(device));
+
+                case SensorType.TEMPerXV31:
+                    var temp = await TEMPerXV31.ReadTemperature(device);
+                    var hum = await TEMPerXV31.ReadHumidity(device);
+
+                    if(hum == 200) //this value means it's really a GoldV31 pretending to be an XV31
+                        return SensorResult.Create(device, temp);
+
+                    return SensorResult.Create(device,temp, hum);
 
                 default:
                     return SensorResult.Error(device, "Device not supported");
